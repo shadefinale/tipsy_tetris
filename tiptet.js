@@ -3,7 +3,6 @@ var controller = (function(){
   var lastDirection = [0,0];
   var currentTime = new Date().getTime();
   var previousTime = currentTime;
-  var gameStart = true;
 
   var keys = {
     37 : moveLeft,
@@ -25,10 +24,10 @@ var controller = (function(){
 
   function rotate(){
     board.rotate();
+    renderer.spinCanvas(90);
   }
 
   function moveLeft(){
-    console.log("Go left!")
     lastDirection = [-1,0];
   }
 
@@ -50,15 +49,27 @@ var controller = (function(){
       currentTime = new Date().getTime();
       board.update(Math.min(1, (currentTime - previousTime) / 1000.0));
       lastDirection = [0,0];
-      renderer.draw(board.currentPiece(), board.gameBoard());
+      renderer.drawScore(board.score());
+      renderer.draw(board.currentPiece(), board.gameBoard(), board.gameStart());
       previousTime = currentTime;
+      gameOver(board.gameStart());
     }
-    setInterval(frame, 100);
+    setInterval(function(e){
+      frame();
+    }, 15);
 
+    setInterval(function(e){
+      renderer.spinCanvas();
+      renderer.recolorBackground();
+    }, 2000);
   }
 
   function lastDir(){
     return lastDirection;
+  }
+
+  function gameOver(gameStart){
+    if (!gameStart) renderer.gameOver();
   }
 
   return {
@@ -75,7 +86,9 @@ var board = (function(){
       width = 10,
       height = 20,
       maxRot = 3,
-      step = .6
+      step = .3,
+      gameStart = true,
+      score = 0,
       dt = 0;
 
   // Blocks are defined in 16 bits to simplify states of rotation
@@ -105,8 +118,19 @@ var board = (function(){
 
   function restartGame(){
     dt = 0;
+    clearBoard();
     setCurrentPiece();
     setNextPiece();
+    score = 0;
+    gameStart = true;
+  }
+
+  function getScore(){
+    return score;
+  }
+
+  function clearBoard(){
+    gameBoard = [];
   }
 
   function setCurrentPiece(newPiece) {
@@ -145,10 +169,14 @@ var board = (function(){
     return { type: type, dir: 0, x: Math.round(0 + (Math.random() * (width - type.size))), y: 0 };
   }
 
+  function inGame(){
+    return gameStart;
+  }
+
 
   // Moves the piece when an input is pressed, applies gravity.
   function update(idt){
-    if (controller.gameStart){
+    if (gameStart){
       move(controller.lastDirection());
       applyGravity(idt);
     }
@@ -171,7 +199,6 @@ var board = (function(){
     var y = currentPiece.y;
 
     if (unoccupied(currentPiece.type, x + direction[0], y + direction[1], currentPiece.dir)){
-      console.log("Droppin");
       currentPiece.x += direction[0];
       currentPiece.y += direction[1];
       return true;
@@ -202,13 +229,13 @@ var board = (function(){
     clearLines();
     setCurrentPiece();
     setNextPiece(randomPiece());
-    clearActions();
     checkGameOver();
   }
 
   function checkGameOver(){
     if (occupied(currentPiece.type, currentPiece.x, currentPiece.y, currentPiece.dir)){
-      gameOver();
+      dropPiece();
+      gameStart = false;
     }
   }
 
@@ -226,8 +253,7 @@ var board = (function(){
     var lineCount = clearIndividualLines();
 
     if (lineCount > 0){
-      // Increase the cleared lines count, and adjust the step speed accordingly.
-      addRows(lineCount);
+      score += lineCount;
     }
   }
 
@@ -237,7 +263,7 @@ var board = (function(){
     var fullLine;
     for (var y = height; y > 0; y--){
       fullLine = true;
-      for(x = 0; x < width; ++x){
+      for(x = 0; x < width; x++){
         // If there is aheight square that is empty in the given line,
         // We'll be done calling clearLine().
         if (!getBlock(x, y)) fullLine = false;
@@ -270,18 +296,27 @@ var board = (function(){
     restartGame: restartGame,
     drop: drop,
     move: move,
+    score: getScore,
     update: update,
     rotate: rotate,
     currentPiece: getCurrentPiece,
+    gameStart: inGame,
   };
 })();
 
 
 var renderer = (function(){
   var canvas;
+  var currentSpin = 0;
   function initCanvas(){
-    console.log("SettingCanvas");
     canvas = $('canvas');
+    background = $('html');
+    lines = $("#lines");
+    gameOverOverlay = $('#game-over');
+    gameOverOverlay.click(function(e){
+      gameOverOverlay.hide(0);
+      board.restartGame();
+    })
   }
 
   function eachblock(type, x, y, dir, fn) {
@@ -297,14 +332,14 @@ var renderer = (function(){
     }
   }
 
-  function draw(current, board){
+  function draw(current, board, gameStart){
     canvas.clearCanvas();
-    drawCurrentPiece(current)
+    drawCurrentPiece(current, gameStart)
     drawBoard(board);
   }
 
-  function drawCurrentPiece(current){
-    if (controller.gameStart){
+  function drawCurrentPiece(current, gameStart){
+    if (gameStart){
       drawPiece(current.type, current.x, current.y, current.dir);
     }
   }
@@ -329,6 +364,8 @@ var renderer = (function(){
 
   function drawBlock(x, y, color){
     canvas.drawRect({
+      strokeStyle: 'black',
+      strokeWidth: 2,
       fillStyle: color,
       x: (x * canvas.width()/10),
       y: (y * canvas.height()/20),
@@ -338,10 +375,44 @@ var renderer = (function(){
     });
   }
 
+  function drawScore(score){
+    lines.text(score);
+  }
+
+  function spinCanvas(deg){
+    if (!deg){
+      var oldSpin = currentSpin;
+      currentSpin += Math.ceil(Math.random() * 360) - 180;
+      currentSpin = Math.abs(currentSpin);
+    } else {
+      currentSpin += deg;
+    }
+    if (currentSpin > 360) {currentSpin = currentSpin % 360};
+    canvas.css("transform", "rotate(" + currentSpin + "deg)");
+    canvas.css("box-shadow", "" + Math.cos(currentSpin) * 60 + "px " + Math.sin(currentSpin) * 60 + "px 60px #222");
+  }
+
+  function recolorBackground(){
+    var randomColor = '#'+Math.floor(Math.random()*16777215).toString(16);
+    background.css("background-color", randomColor);
+  }
+
+  function gameOver(){
+    if (!gameOverOverlay.is(':visible')) {
+      console.log("Game Over!");
+      gameOverOverlay.fadeTo(0, .7);
+    }
+
+  }
+
   return {
     draw: draw,
     drawBlock: drawBlock,
+    drawScore: drawScore,
     initCanvas: initCanvas,
+    spinCanvas: spinCanvas,
+    recolorBackground: recolorBackground,
+    gameOver: gameOver,
   };
 })();
 
