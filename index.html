@@ -10,9 +10,17 @@
   <script src="jcanvas.min.js"></script>
   <script src="tiptet.js"></script>
 </head>
-<body>
+<body oncontextmenu="return false">
 
-  <div id="game-over">Game Over</div>
+  <div id="game-over">
+    Click to Play<br>
+    <div class="instructions">
+      Controls:<br>
+      Left/Right Arrow: Move Piece<br>
+      Down Arrow: Speed Up Piece<br>
+      Z/X: Rotate Piece<br>
+    </div>
+  </div>
 
   <div id="canvas-container">
     <canvas id="canvas" width="400" height="600"></canvas>

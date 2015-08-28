@@ -51,7 +51,7 @@ html {
   display: block;
   box-shadow: 10px 10px 10px #444;
   border: 2px solid #333;
-  transition: box-shadow 3s, transform 3s;
+  transition: box-shadow 3s, transform 1.5s;
 }
 
 
@@ -59,11 +59,15 @@ html {
   position: absolute;
   width: 100%;
   height: 100%;
-  display: none;
-  font-size: 250px;
+  opacity: 0.7;
+  font-size: 8em;
   color: black;
   text-align: center;
   background-color: #AAA;
   transition: all 2s;
   z-index: 5;
+}
+
+.instructions {
+  font-size: .5em;
 }

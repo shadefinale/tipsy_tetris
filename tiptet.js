@@ -6,7 +6,8 @@ var controller = (function(){
 
   var keys = {
     37 : moveLeft,
-    38 : rotate,
+    90 : rotateLeft,
+    88 : rotateRight,
     39 : moveRight,
     40 : moveDown,
   }
@@ -22,17 +23,24 @@ var controller = (function(){
     })
   }
 
-  function rotate(){
-    board.rotate();
-    renderer.spinCanvas(90);
+  function rotateLeft(){
+    board.rotateLeft();
+    if (board.score() > 6){ renderer.spinCanvas(90) };
+  }
+
+  function rotateRight(){
+    board.rotateRight();
+    if (board.score() > 6){ renderer.spinCanvas(-90) };
   }
 
   function moveLeft(){
     lastDirection = [-1,0];
+    if (board.score() > 1){ renderer.spinCanvas(-2) };
   }
 
   function moveRight(){
     lastDirection = [1, 0];
+    if (board.score() > 1){ renderer.spinCanvas(2) };
   }
 
   function moveDown(){
@@ -59,8 +67,10 @@ var controller = (function(){
     }, 15);
 
     setInterval(function(e){
-      renderer.spinCanvas();
-      renderer.recolorBackground();
+      if (board.score() > 10){
+        renderer.spinCanvas();
+        renderer.recolorBackground();
+      }
     }, 2000);
   }
 
@@ -86,8 +96,8 @@ var board = (function(){
       width = 10,
       height = 20,
       maxRot = 3,
-      step = .3,
-      gameStart = true,
+      step = .01,
+      gameStart = false,
       score = 0,
       dt = 0;
 
@@ -122,6 +132,7 @@ var board = (function(){
     setCurrentPiece();
     setNextPiece();
     score = 0;
+    step = .5;
     gameStart = true;
   }
 
@@ -207,7 +218,15 @@ var board = (function(){
     }
   }
 
-  function rotate(){
+  function rotateLeft(){
+    // Cycle to the next rotation type and loop back to 0 if on last.
+    var newdir = (currentPiece.dir == 0? maxRot : currentPiece.dir - 1);
+    if (unoccupied(currentPiece.type, currentPiece.x, currentPiece.y, newdir)){
+      currentPiece.dir = newdir;
+    }
+  }
+
+  function rotateRight(){
     // Cycle to the next rotation type and loop back to 0 if on last.
     var newdir = (currentPiece.dir == maxRot? 0 : currentPiece.dir + 1);
     if (unoccupied(currentPiece.type, currentPiece.x, currentPiece.y, newdir)){
@@ -254,6 +273,8 @@ var board = (function(){
 
     if (lineCount > 0){
       score += lineCount;
+      step = .5 - lineCount/25;
+      if (step < .1) step = .1;
     }
   }
 
@@ -298,7 +319,8 @@ var board = (function(){
     move: move,
     score: getScore,
     update: update,
-    rotate: rotate,
+    rotateLeft: rotateLeft,
+    rotateRight: rotateRight,
     currentPiece: getCurrentPiece,
     gameStart: inGame,
   };
@@ -315,6 +337,8 @@ var renderer = (function(){
     gameOverOverlay = $('#game-over');
     gameOverOverlay.click(function(e){
       gameOverOverlay.hide(0);
+      canvas.css("transform", "rotate(0deg)");
+      currentSpin = 0;
       board.restartGame();
     })
   }
@@ -385,6 +409,7 @@ var renderer = (function(){
       currentSpin += Math.ceil(Math.random() * 360) - 180;
       currentSpin = Math.abs(currentSpin);
     } else {
+      console.log("Spinning");
       currentSpin += deg;
     }
     if (currentSpin > 360) {currentSpin = currentSpin % 360};
