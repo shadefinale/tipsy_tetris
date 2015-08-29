@@ -412,7 +412,6 @@ var renderer = (function(){
 
   function spinCanvas(deg){
     if (!deg){
-      var oldSpin = currentSpin;
       currentSpin += Math.ceil(Math.random() * 360) - 180;
       currentSpin = Math.abs(currentSpin);
     } else {
