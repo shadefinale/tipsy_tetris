@@ -6,6 +6,7 @@ var controller = (function(){
 
   var keys = {
     37 : moveLeft,
+    38 : rotateRight,
     90 : rotateLeft,
     88 : rotateRight,
     39 : moveRight,
