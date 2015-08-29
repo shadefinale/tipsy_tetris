@@ -333,6 +333,9 @@ var renderer = (function(){
   var currentSpin = 0;
   var transitioning = false;
   function initCanvas(){
+    setInterval(function(){
+      transitioning = false;
+    }, 6000);
     canvas = $('canvas');
     canvas.on("transitionend MSTransitionEnd webkitTransitionEnd oTransitionEnd",
       function() {
