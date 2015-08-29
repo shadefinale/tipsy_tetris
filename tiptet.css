@@ -51,7 +51,7 @@ html {
   display: block;
   box-shadow: 10px 10px 10px #444;
   border: 2px solid #333;
-  transition: box-shadow 3s, transform 1.5s;
+  transition: box-shadow 3s, transform 2.5s;
 }
 
 

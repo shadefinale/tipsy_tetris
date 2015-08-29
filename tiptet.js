@@ -330,8 +330,14 @@ var board = (function(){
 var renderer = (function(){
   var canvas;
   var currentSpin = 0;
+  var transitioning = false;
   function initCanvas(){
     canvas = $('canvas');
+    canvas.on("transitionend MSTransitionEnd webkitTransitionEnd oTransitionEnd",
+      function() {
+        transitioning = false;  // Transition has ended.
+      }
+    );
     background = $('html');
     lines = $("#lines");
     gameOverOverlay = $('#game-over');
@@ -413,8 +419,12 @@ var renderer = (function(){
       currentSpin += deg;
     }
     if (currentSpin > 360) {currentSpin = currentSpin % 360};
-    canvas.css("transform", "rotate(" + currentSpin + "deg)");
-    canvas.css("box-shadow", "" + Math.cos(currentSpin) * 60 + "px " + Math.sin(currentSpin) * 60 + "px 60px #222");
+
+    if (!transitioning){
+      canvas.css("transform", "rotate(" + currentSpin + "deg)");
+      canvas.css("box-shadow", "" + Math.cos(currentSpin) * 60 + "px " + Math.sin(currentSpin) * 60 + "px 60px #222");
+      transitioning = true;
+    }
   }
 
   function recolorBackground(){
