@@ -50,7 +50,7 @@ var controller = (function(){
 
   function play(){
     initControls();
-    renderer.initCanvas();
+    renderer.init();
 
     board.restartGame();
 
@@ -58,8 +58,7 @@ var controller = (function(){
       currentTime = new Date().getTime();
       board.update(Math.min(1, (currentTime - previousTime) / 1000.0));
       lastDirection = [0,0];
-      renderer.drawScore(board.score());
-      renderer.draw(board.currentPiece(), board.gameBoard(), board.gameStart());
+      redraw();
       previousTime = currentTime;
       gameOver(board.gameStart());
     }
@@ -79,6 +78,12 @@ var controller = (function(){
     return lastDirection;
   }
 
+  function redraw(){
+    renderer.drawScore(board.score());
+    renderer.draw(board.currentPiece(), board.gameBoard(), board.gameStart());
+    renderer.drawSidePieces(board.nextPiece());
+  }
+
   function gameOver(gameStart){
     if (!gameStart) renderer.gameOver();
   }
@@ -92,8 +97,8 @@ var controller = (function(){
 
 var board = (function(){
   var gameBoard = [],
-      currentPiece = [],
-      nextPiece = [],
+      currentPiece,
+      nextPiece,
       width = 10,
       height = 20,
       maxRot = 3,
@@ -146,7 +151,7 @@ var board = (function(){
   }
 
   function setCurrentPiece(newPiece) {
-    currentPiece = newPiece || randomPiece();
+    currentPiece = newPiece || nextPiece || randomPiece();
   }
 
   function setNextPiece(newPiece){
@@ -311,6 +316,9 @@ var board = (function(){
     return currentPiece;
   }
 
+  function getNextPiece(){
+    return nextPiece;
+  }
 
 
   return {
@@ -323,6 +331,7 @@ var board = (function(){
     rotateLeft: rotateLeft,
     rotateRight: rotateRight,
     currentPiece: getCurrentPiece,
+    nextPiece: getNextPiece,
     gameStart: inGame,
   };
 })();
@@ -332,18 +341,33 @@ var renderer = (function(){
   var canvas;
   var currentSpin = 0;
   var transitioning = false;
+  var lines, background, preview, hold;
+  function init(){
+    initCanvas();
+    cacheElements();
+    initOverlay();
+  }
+
   function initCanvas(){
     setInterval(function(){
       transitioning = false;
     }, 6000);
-    canvas = $('canvas');
+    canvas = $("#canvas");
     canvas.on("transitionend MSTransitionEnd webkitTransitionEnd oTransitionEnd",
       function() {
         transitioning = false;  // Transition has ended.
       }
     );
+  }
+
+  function cacheElements(){
     background = $('html');
     lines = $("#lines");
+    preview = $("#preview");
+    hold = $("#hold");
+  }
+
+  function initOverlay(){
     gameOverOverlay = $('#game-over');
     gameOverOverlay.click(function(e){
       gameOverOverlay.hide(0);
@@ -396,6 +420,38 @@ var renderer = (function(){
     }
   }
 
+  function drawSidePieces(next, hold){
+    preview.clearCanvas();
+    if (preview && preview != undefined) drawNextPiece(next);
+    // if (hold) drawHoldPiece(hold);
+  }
+
+  function drawNextPiece(type){
+    eachblock(type.type, 0, 0, 0, function(x, y){
+      drawSideBlock(x, y, type.type.color, preview);
+    });
+  }
+
+  function drawHoldPiece(type){
+    eachblock(type, 0, 0, 0, function(x, y){
+      drawSideBlock(x, y, type.color, hold);
+    });
+  }
+
+  function drawSideBlock(x, y, color, target){
+    console.log(color);
+    target.drawRect({
+      strokeStyle: 'black',
+      strokeWidth: 2,
+      fillStyle: color,
+      x: x * 20,
+      y: y * 20,
+      width: 20,
+      height: 20,
+      fronCenter: false,
+    })
+  }
+
   function drawBlock(x, y, color){
     canvas.drawRect({
       strokeStyle: 'black',
@@ -418,7 +474,6 @@ var renderer = (function(){
       currentSpin += Math.ceil(Math.random() * 360) - 180;
       currentSpin = Math.abs(currentSpin);
     } else {
-      console.log("Spinning");
       currentSpin += deg;
     }
     if (currentSpin > 360) {currentSpin = currentSpin % 360};
@@ -437,7 +492,6 @@ var renderer = (function(){
 
   function gameOver(){
     if (!gameOverOverlay.is(':visible')) {
-      console.log("Game Over!");
       gameOverOverlay.fadeTo(0, .7);
     }
 
@@ -446,8 +500,9 @@ var renderer = (function(){
   return {
     draw: draw,
     drawBlock: drawBlock,
+    drawSidePieces: drawSidePieces,
     drawScore: drawScore,
-    initCanvas: initCanvas,
+    init: init,
     spinCanvas: spinCanvas,
     recolorBackground: recolorBackground,
     gameOver: gameOver,
@@ -457,13 +512,3 @@ var renderer = (function(){
 $(document).ready(function(){
   controller.play();
 })
-
-
-    // $("canvas").drawRect({
-      // fillStyle: "#000",
-      // x: 100,
-      // y: 100,
-      // width: 100,
-      // height: 100,
-    //   fromCenter: false
-    // });
