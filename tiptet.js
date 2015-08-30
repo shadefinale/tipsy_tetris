@@ -109,13 +109,13 @@ var board = (function(){
 
   // Blocks are defined in 16 bits to simplify states of rotation
   var allBlocks = {
-    i: { size: 4, blocks: [0x0F00, 0x2222, 0x00F0, 0x4444], color: 'cyan'},
-    j: { size: 3, blocks: [0x44C0, 0x8E00, 0x6440, 0x0E20], color: 'blue'   },
-    l: { size: 3, blocks: [0x4460, 0x0E80, 0xC440, 0x2E00], color: 'orange' },
-    o: { size: 2, blocks: [0xCC00, 0xCC00, 0xCC00, 0xCC00], color: 'yellow' },
-    s: { size: 3, blocks: [0x06C0, 0x8C40, 0x6C00, 0x4620], color: 'green'  },
-    t: { size: 3, blocks: [0x0E40, 0x4C40, 0x4E00, 0x4640], color: 'purple' },
-    z: { size: 3, blocks: [0x0C60, 0x4C80, 0xC600, 0x2640], color: 'red'    },
+    i: { size: 4, blocks: [0x2222, 0x0F00, 0x4444, 0x00F0], color: 'cyan'  , offset: {x:0, y: 0 } },
+    j: { size: 3, blocks: [0x44C0, 0x8E00, 0x6440, 0x0E20], color: 'blue'  , offset: {x:3, y: -1 } },
+    l: { size: 3, blocks: [0x4460, 0x0E80, 0xC440, 0x2E00], color: 'orange', offset: {x:1, y: -1 } },
+    o: { size: 2, blocks: [0xCC00, 0xCC00, 0xCC00, 0xCC00], color: 'yellow', offset: {x:3, y: -2 } },
+    s: { size: 3, blocks: [0x06C0, 0x8C40, 0x6C00, 0x4620], color: 'green' , offset: {x:2, y: 0 } },
+    t: { size: 3, blocks: [0x0E40, 0x4C40, 0x4E00, 0x4640], color: 'purple', offset: {x:2, y: 0 } },
+    z: { size: 3, blocks: [0x0C60, 0x4C80, 0xC600, 0x2640], color: 'red'   , offset: {x:2, y: 0 } },
   }
 
   // Takes a given block type, an x and y position, a direction, and applies a function.
@@ -428,27 +428,27 @@ var renderer = (function(){
 
   function drawNextPiece(type){
     eachblock(type.type, 0, 0, 0, function(x, y){
-      drawSideBlock(x, y, type.type.color, preview);
+      drawSideBlock(x, y, type.type.color, preview, type.type.offset);
     });
   }
 
-  function drawHoldPiece(type){
+  function drawHoldPiece(type){x
     eachblock(type, 0, 0, 0, function(x, y){
       drawSideBlock(x, y, type.color, hold);
     });
   }
 
-  function drawSideBlock(x, y, color, target){
+  function drawSideBlock(x, y, color, target, offset){
     console.log(color);
     target.drawRect({
       strokeStyle: 'black',
       strokeWidth: 2,
       fillStyle: color,
-      x: x * 20,
-      y: y * 20,
+      x: 10 + (offset.x * 10) + x * 20,
+      y: 20 - (offset.y * 10) + y * 20,
       width: 20,
       height: 20,
-      fronCenter: false,
+      //fronCenter: false,
     })
   }
 
