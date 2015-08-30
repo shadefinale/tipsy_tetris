@@ -302,7 +302,6 @@ var board = (function(){
       score += lineCount;
       step = .5 - score/90;
       if (step < .1) step = .1;
-      console.log(step);
     }
   }
 
