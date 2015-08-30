@@ -71,6 +71,23 @@ html {
   border: 10px solid black;
 }
 
+#hold {
+  position: absolute;
+  clear:both;
+  display: inline-block;
+  width:100px;
+  height:100px;
+  top: 350px;
+  left: 800px;
+  line-height: 100px;
+  font-size: 4em;
+  text-align: center;
+  font-family: 'Fjalla One', sans-serif;
+  background-color: white;
+  border-radius: 10px;
+  border: 10px solid black;
+}
+
 
 #game-over {
   position: absolute;
@@ -87,5 +104,5 @@ html {
 }
 
 .instructions {
-  font-size: .4em;
+  font-size: .3em;
 }

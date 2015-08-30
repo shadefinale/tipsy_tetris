@@ -5,6 +5,7 @@ var controller = (function(){
   var previousTime = currentTime;
 
   var keys = {
+    16 : holdPiece,
     37 : moveLeft,
     38 : rotateRight,
     90 : rotateLeft,
@@ -12,8 +13,9 @@ var controller = (function(){
     39 : moveRight,
     40 : moveDown,
   }
-  function isStarted(){
-    return gameStart;
+
+  function holdPiece(){
+    board.holdPiece();
   }
 
   function initControls(){
@@ -56,7 +58,7 @@ var controller = (function(){
 
     function frame(){
       currentTime = new Date().getTime();
-      board.update(Math.min(1, (currentTime - previousTime) / 1000.0));
+      board.update(Math.min(1, (currentTime - previousTime) / 1000.0), lastDirection);
       lastDirection = [0,0];
       redraw();
       previousTime = currentTime;
@@ -74,14 +76,10 @@ var controller = (function(){
     }, 2000);
   }
 
-  function lastDir(){
-    return lastDirection;
-  }
-
   function redraw(){
     renderer.drawScore(board.score());
     renderer.draw(board.currentPiece(), board.gameBoard(), board.gameStart());
-    renderer.drawSidePieces(board.nextPiece());
+    renderer.drawSidePieces(board.nextPiece(), board.heldPiece());
   }
 
   function gameOver(gameStart){
@@ -90,8 +88,6 @@ var controller = (function(){
 
   return {
     play: play,
-    gameStart: isStarted,
-    lastDirection: lastDir,
   };
 })();
 
@@ -99,6 +95,8 @@ var board = (function(){
   var gameBoard = [],
       currentPiece,
       nextPiece,
+      heldPiece,
+      alreadyHeld,
       width = 10,
       height = 20,
       maxRot = 3,
@@ -137,6 +135,7 @@ var board = (function(){
     clearBoard();
     setCurrentPiece();
     setNextPiece();
+    alreadyHeld = false;
     score = 0;
     step = .5;
     gameStart = true;
@@ -156,6 +155,27 @@ var board = (function(){
 
   function setNextPiece(newPiece){
     nextPiece = newPiece || randomPiece();
+  }
+
+  function holdPiece(){
+    if (!alreadyHeld){
+      alreadyHeld = true;
+      heldPiece ? swapCurrentPiece() : yankCurrentPiece();
+    }
+  }
+
+  function swapCurrentPiece(){
+    heldPiece.y = 0;
+    tmp = currentPiece;
+    currentPiece = heldPiece;
+    heldPiece = tmp;
+  }
+
+  function yankCurrentPiece(){
+    heldPiece = currentPiece;
+    heldPiece.y = 0;
+    setCurrentPiece();
+    setNextPiece();
   }
 
   function getBoard(){
@@ -192,9 +212,9 @@ var board = (function(){
 
 
   // Moves the piece when an input is pressed, applies gravity.
-  function update(idt){
+  function update(idt, dir){
     if (gameStart){
-      move(controller.lastDirection());
+      move(dir);
       applyGravity(idt);
     }
   }
@@ -246,6 +266,7 @@ var board = (function(){
     // needs to be done to set up a new piece.
     if (!move([0, 1])){
       dropNewPiece();
+      alreadyHeld = false;
     }
   }
 
@@ -279,8 +300,9 @@ var board = (function(){
 
     if (lineCount > 0){
       score += lineCount;
-      step = .5 - lineCount/25;
+      step = .5 - score/90;
       if (step < .1) step = .1;
+      console.log(step);
     }
   }
 
@@ -320,6 +342,10 @@ var board = (function(){
     return nextPiece;
   }
 
+  function getHeldPiece(){
+    return heldPiece;
+  }
+
 
   return {
     gameBoard: getBoard,
@@ -332,6 +358,8 @@ var board = (function(){
     rotateRight: rotateRight,
     currentPiece: getCurrentPiece,
     nextPiece: getNextPiece,
+    holdPiece: holdPiece,
+    heldPiece: getHeldPiece,
     gameStart: inGame,
   };
 })();
@@ -420,10 +448,11 @@ var renderer = (function(){
     }
   }
 
-  function drawSidePieces(next, hold){
+  function drawSidePieces(next, held){
     preview.clearCanvas();
-    if (preview && preview != undefined) drawNextPiece(next);
-    // if (hold) drawHoldPiece(hold);
+    hold.clearCanvas();
+    if (preview) drawNextPiece(next);
+    if (held) drawHoldPiece(held);
   }
 
   function drawNextPiece(type){
@@ -432,14 +461,13 @@ var renderer = (function(){
     });
   }
 
-  function drawHoldPiece(type){x
-    eachblock(type, 0, 0, 0, function(x, y){
-      drawSideBlock(x, y, type.color, hold);
+  function drawHoldPiece(type){
+    eachblock(type.type, 0, 0, 0, function(x, y){
+      drawSideBlock(x, y, type.type.color, hold, type.type.offset);
     });
   }
 
   function drawSideBlock(x, y, color, target, offset){
-    console.log(color);
     target.drawRect({
       strokeStyle: 'black',
       strokeWidth: 2,
