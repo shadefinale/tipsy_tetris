@@ -6,12 +6,13 @@ var controller = (function(){
 
   var keys = {
     16 : holdPiece,
+    32 : quickDrop,
     37 : moveLeft,
-    38 : rotateRight,
-    90 : rotateLeft,
-    88 : rotateRight,
     39 : moveRight,
+    38 : rotateRight,
     40 : moveDown,
+    88 : rotateRight,
+    90 : rotateLeft,
   }
 
   function holdPiece(){
@@ -24,6 +25,10 @@ var controller = (function(){
         keys[e.keyCode]();
       }
     })
+  }
+
+  function quickDrop(){
+    board.quickDrop();
   }
 
   function rotateLeft(){
@@ -267,6 +272,14 @@ var board = (function(){
     if (!move([0, 1])){
       dropNewPiece();
       alreadyHeld = false;
+      return true;
+    }
+    return false;
+  }
+
+  function quickDrop(){
+    if (gameStart){
+      while(!drop());
     }
   }
 
@@ -355,6 +368,7 @@ var board = (function(){
     update: update,
     rotateLeft: rotateLeft,
     rotateRight: rotateRight,
+    quickDrop: quickDrop,
     currentPiece: getCurrentPiece,
     nextPiece: getNextPiece,
     holdPiece: holdPiece,
